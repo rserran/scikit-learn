@@ -9,6 +9,7 @@ from scipy.special import gammainc
 from ..base import BaseEstimator
 from ..utils import check_array, check_random_state
 from ..utils.validation import _check_sample_weight, check_is_fitted
+from ..utils.validation import _deprecate_positional_args
 
 from ..utils.extmath import row_norms
 from ._ball_tree import BallTree, DTYPE
@@ -89,7 +90,8 @@ class KernelDensity(BaseEstimator):
     >>> log_density
     array([-1.52955942, -1.51462041, -1.60244657])
     """
-    def __init__(self, bandwidth=1.0, algorithm='auto',
+    @_deprecate_positional_args
+    def __init__(self, *, bandwidth=1.0, algorithm='auto',
                  kernel='gaussian', metric="euclidean", atol=0, rtol=0,
                  breadth_first=True, leaf_size=40, metric_params=None):
         self.algorithm = algorithm
@@ -145,6 +147,8 @@ class KernelDensity(BaseEstimator):
             :class:`sklearn.pipeline.Pipeline`.
         sample_weight : array_like, shape (n_samples,), optional
             List of sample weights attached to the data X.
+
+            .. versionadded:: 0.20
 
         Returns
         -------
@@ -270,3 +274,11 @@ class KernelDensity(BaseEstimator):
             correction = (gammainc(0.5 * dim, 0.5 * s_sq) ** (1. / dim)
                           * self.bandwidth / np.sqrt(s_sq))
             return data[i] + X * correction[:, np.newaxis]
+
+    def _more_tags(self):
+        return {
+            '_xfail_checks': {
+                'check_sample_weights_invariance(kind=zeros)':
+                'sample_weight must have positive values',
+            }
+        }
