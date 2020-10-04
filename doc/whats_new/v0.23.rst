@@ -614,6 +614,11 @@ Changelog
 :mod:`sklearn.multioutput`
 ..........................
 
+- |Feature| :func:`multioutput.MultiOutputRegressor.fit` and
+  :func:`multioutput.MultiOutputClassifier.fit` now can accept `fit_params`
+  to pass to the `estimator.fit` method of each step. :issue:`15953`
+  :pr:`15959` by :user:`Ke Huang <huangk10>`.
+
 - |Enhancement| :class:`multioutput.RegressorChain` now supports `fit_params`
   for `base_estimator` during `fit`.
   :pr:`16111` by :user:`Venkatachalam N <venkyyuvy>`.
@@ -621,11 +626,6 @@ Changelog
 :mod:`sklearn.naive_bayes`
 .............................
 
-- |Enhancement| Adds a parameter `min_categories` to
-  :class:`naive_bayes.CategoricalNB` that allows a minimum number of categories
-  per feature to be specified. This allows categories unseen during training
-  to be accounted for.
-  :pr:`16326` by :user:`George Armstrong <gwarmstrong>`.
 - |Fix| A correctly formatted error message is shown in
   :class:`naive_bayes.CategoricalNB` when the number of features in the input
   differs between `predict` and `fit`.
