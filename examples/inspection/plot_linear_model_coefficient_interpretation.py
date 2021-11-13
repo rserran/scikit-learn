@@ -26,9 +26,8 @@ wage as a function of various features such as experience, age, or education.
 .. contents::
    :local:
    :depth: 1
-"""
 
-print(__doc__)
+"""
 
 import numpy as np
 import scipy as sp
@@ -135,7 +134,7 @@ numerical_columns = ["EDUCATION", "EXPERIENCE", "AGE"]
 preprocessor = make_column_transformer(
     (OneHotEncoder(drop="if_binary"), categorical_columns),
     remainder="passthrough",
-    prefix_feature_names_out=False,
+    verbose_feature_names_out=False,
 )
 
 # %%
