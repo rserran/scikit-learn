@@ -370,6 +370,11 @@ Changelog
   `warm_start` enabled.
   :pr:`22106` by :user:`Pieter Gijsbers <PGijsbers>`.
 
+- |Enhancement| Adds support to use pre-fit models with `cv="prefit"`
+  in :class:`ensemble.StackingClassifier` and :class:`ensemble.StackingRegressor`.
+  :pr:`16748` by :user:`Siqi He <siqi-he>` and :pr:`22215` by
+  :user:`Meekail Zain <micky774>`.
+
 - |Enhancement| :class:`feature_selection.GenericUnivariateSelect` preserves
   float32 dtype. :pr:`18482` by :user:`Thierry Gameiro <titigmr>`
   and :user:`Daniel Kharsa <aflatoune>` and :pr:`22370` by
@@ -532,6 +537,10 @@ Changelog
   it would record only the maximum of the number of iterations for each binary
   sub-problem while now all of them are recorded. :pr:`21998` by
   :user:`Olivier Grisel <ogrisel>`.
+
+- |Enhancement| :class:`linear_model.BayesianRidge` and
+  :class:`linear_model.ARDRegression` now preserve float32 dtype. :pr:`9087` by
+  :user:`Arthur Imbert <Henley13>` and :pr:`22525` by :user:`Meekail Zain <micky774>`.
 
 :mod:`sklearn.metrics`
 ......................
