@@ -376,7 +376,7 @@ def test_average_precision_score_duplicate_values():
 
 def test_average_precision_score_tied_values():
     # Here if we go from left to right in y_true, the 0 values are
-    # are separated from the 1 values, so it appears that we've
+    # separated from the 1 values, so it appears that we've
     # Correctly sorted our classifications. But in fact the first two
     # values have the same score (0.5) and so the first two values
     # could be swapped around, creating an imperfect sorting. This
@@ -639,8 +639,10 @@ def test_likelihood_ratios_warnings(params, warn_msg):
                 "y_true": np.array([0, 1, 0, 1, 0]),
                 "y_pred": np.array([1, 1, 0, 0, 2]),
             },
-            "class_likelihood_ratios only supports binary classification "
-            "problems, got targets of type: multiclass",
+            (
+                "class_likelihood_ratios only supports binary classification "
+                "problems, got targets of type: multiclass"
+            ),
         ),
     ],
 )
