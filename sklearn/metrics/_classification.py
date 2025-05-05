@@ -36,7 +36,6 @@ from ..utils._array_api import (
     _searchsorted,
     _tolist,
     _union1d,
-    device,
     get_namespace,
     get_namespace_and_device,
     xpx,
@@ -655,8 +654,7 @@ def multilabel_confusion_matrix(
             [1, 2]]])
     """
     y_true, y_pred = attach_unique(y_true, y_pred)
-    xp, _ = get_namespace(y_true, y_pred)
-    device_ = device(y_true, y_pred)
+    xp, _, device_ = get_namespace_and_device(y_true, y_pred)
     y_type, y_true, y_pred = _check_targets(y_true, y_pred)
     if sample_weight is not None:
         sample_weight = column_or_1d(sample_weight, device=device_)
@@ -832,7 +830,9 @@ def cohen_kappa_score(y1, y2, *, labels=None, weights=None, sample_weight=None):
     labels : array-like of shape (n_classes,), default=None
         List of labels to index the matrix. This may be used to select a
         subset of labels. If `None`, all labels that appear at least once in
-        ``y1`` or ``y2`` are used.
+        ``y1`` or ``y2`` are used. Note that at least one label in `labels` must be
+         present in `y1`, even though this function is otherwise agnostic to the order
+         of `y1` and `y2`.
 
     weights : {'linear', 'quadratic'}, default=None
         Weighting type to calculate the score. `None` means not weighted;
@@ -866,7 +866,18 @@ def cohen_kappa_score(y1, y2, *, labels=None, weights=None, sample_weight=None):
     >>> cohen_kappa_score(y1, y2)
     0.6875
     """
-    confusion = confusion_matrix(y1, y2, labels=labels, sample_weight=sample_weight)
+    try:
+        confusion = confusion_matrix(y1, y2, labels=labels, sample_weight=sample_weight)
+    except ValueError as e:
+        if "At least one label specified must be in y_true" in str(e):
+            msg = (
+                "At least one label in `labels` must be present in `y1` (even though "
+                "`cohen_kappa_score` is otherwise agnostic to the order of `y1` and "
+                "`y2`)."
+            )
+            raise ValueError(msg) from e
+        raise
+
     n_classes = confusion.shape[0]
     sum0 = np.sum(confusion, axis=0)
     sum1 = np.sum(confusion, axis=1)
