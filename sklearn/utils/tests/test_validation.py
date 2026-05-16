@@ -1922,6 +1922,32 @@ def test_check_sparse_pandas_sp_format(sp_format):
     assert_allclose_dense_sparse(sp_mat, result)
 
 
+def test_check_array_pd_sparse_dataframe_warning():
+    """Test that check_array warns on pandas dataframe with sparse columns."""
+    pd = pytest.importorskip("pandas")
+
+    # Warning is raised only when some of the columns are sparse, not all of them.
+    # Construct a pandas.DataFrame with first column dense, all others sparse.
+    df = pd.DataFrame({"col_0": np.linspace(0, 1, 10)})
+    for i in range(1, 4):
+        arr = np.zeros(10)
+        arr[:4] = np.arange(4)
+        arr = pd.arrays.SparseArray(arr, fill_value=0)
+        df[f"col_{i}"] = arr
+
+    msg = "pandas.DataFrame with sparse columns found."
+    with pytest.warns(UserWarning, match=msg):
+        check_array(df, accept_sparse=True)
+
+    # No warning when the whole dataframe is sparse
+    df = df.drop(columns="col_0")
+    assert hasattr(df, "sparse")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        check_array(df, accept_sparse=True)
+
+
 @pytest.mark.parametrize(
     "ntype1, ntype2",
     [
@@ -2062,7 +2088,7 @@ def test_get_feature_names_4_dataframes(constructor_name, minversion):
     data = [[1, 4, 2], [3, 3, 6]]
     columns = ["col_0", "col_1", "col_2"]
     df = _convert_container(
-        data, constructor_name, columns_name=columns, minversion=minversion
+        data, constructor_name, column_names=columns, minversion=minversion
     )
     feature_names = _get_feature_names(df)
 
@@ -2113,36 +2139,34 @@ class PassthroughTransformer(BaseEstimator):
         return _check_feature_names_in(self, input_features)
 
 
-def test_check_feature_names_in():
+@pytest.mark.parametrize(
+    ["constructor_name", "feature_names", "msg"],
+    [
+        ("array", ["x0", "x1", "x2"], "input_features should have length equal to"),
+        ("pandas", ["a", "b", "c"], "input_features is not equal to"),
+        ("polars", ["a", "b", "c"], "input_features is not equal to"),
+    ],
+)
+def test_check_feature_names_in(constructor_name, feature_names, msg):
     """Check behavior of check_feature_names_in for arrays."""
     X = np.array([[0.0, 1.0, 2.0]])
+    X = _convert_container(X, constructor_name, column_names=["a", "b", "c"])
     est = PassthroughTransformer().fit(X)
 
     names = est.get_feature_names_out()
-    assert_array_equal(names, ["x0", "x1", "x2"])
+    assert_array_equal(names, feature_names)
 
-    incorrect_len_names = ["x10", "x1"]
-    with pytest.raises(ValueError, match="input_features should have length equal to"):
+    incorrect_len_names = feature_names[:2]
+    with pytest.raises(ValueError, match=msg):
         est.get_feature_names_out(incorrect_len_names)
 
     # remove n_feature_in_
     del est.n_features_in_
-    with pytest.raises(ValueError, match="Unable to generate feature names"):
-        est.get_feature_names_out()
-
-
-def test_check_feature_names_in_pandas():
-    """Check behavior of check_feature_names_in for pandas dataframes."""
-    pd = pytest.importorskip("pandas")
-    names = ["a", "b", "c"]
-    df = pd.DataFrame([[0.0, 1.0, 2.0]], columns=names)
-    est = PassthroughTransformer().fit(df)
-
-    names = est.get_feature_names_out()
-    assert_array_equal(names, ["a", "b", "c"])
-
-    with pytest.raises(ValueError, match="input_features is not equal to"):
-        est.get_feature_names_out(["x1", "x2", "x3"])
+    if constructor_name == "array":
+        with pytest.raises(ValueError, match="Unable to generate feature names"):
+            est.get_feature_names_out()
+    else:
+        assert_array_equal(est.get_feature_names_out(), feature_names)
 
 
 def test_check_response_method_unknown_method():
@@ -2491,9 +2515,18 @@ def test_check_categorical_features(categorical_features, on_array, constructor_
     X = _convert_container(
         X,
         constructor_name,
-        columns_name=["a", "b", "c", "d"],
+        column_names=["a", "b", "c", "d"],
         categorical_feature_names=["b", "c"],
     )
 
     result = _check_categorical_features(X, categorical_features)
     assert_allclose(result, [False, True, True, False])
+
+
+def test_num_samples_pa_chunked_array():
+    # https://github.com/scikit-learn/scikit-learn/issues/33993
+    pytest.importorskip("pyarrow")
+    from pyarrow import chunked_array
+
+    result = _num_samples(chunked_array([[0.1, 0.2, 0.3]]))
+    assert result == 3
